@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import SearchForm from "@/components/custom/searchform";
 import TrackList from "@/components/custom/trackList";
@@ -10,8 +10,10 @@ import { useEffect, useState } from "react";
 export default function Home() {
   const { data: session } = useSession();
 
-  const [seedRecommendations, setSeedRecommendations] = useState<Track[]>([])
-  const [spotifyRecommendations, setSpotifyRecommendations] = useState<Track[]>([])
+  const [seedRecommendations, setSeedRecommendations] = useState<Track[]>([]);
+  const [spotifyRecommendations, setSpotifyRecommendations] = useState<Track[]>(
+    []
+  );
 
   const { refetch } = useQuery({
     enabled: !!session && seedRecommendations.length == 5,
@@ -21,7 +23,7 @@ export default function Home() {
       const usp = new URLSearchParams({
         limit: "20",
         market: "ES",
-        seed_tracks: seedRecommendations.map((track) => track.id).join(",")
+        seed_tracks: seedRecommendations.map((track) => track.id).join(","),
       });
 
       const response = await fetch(
@@ -34,16 +36,13 @@ export default function Home() {
       );
 
       if (!response.ok) {
-        console.error(
-          "Failed to fetch recommendations:",
-          { response }
-        );
+        console.error("Failed to fetch recommendations:", { response });
         return;
       }
 
       const data = await response.json();
 
-      setSpotifyRecommendations(data.tracks as Track[])
+      setSpotifyRecommendations(data.tracks as Track[]);
 
       return data.tracks as Track[];
     },
@@ -51,16 +50,23 @@ export default function Home() {
 
   useEffect(() => {
     if (seedRecommendations.length === 5) {
-      refetch()
+      refetch();
     } else {
-      setSpotifyRecommendations([])
+      setSpotifyRecommendations([]);
     }
-  }, [seedRecommendations])
+  }, [seedRecommendations, refetch]);
 
   return (
     <div className="flex flex-col justify-between py-6 px-8 gap-8">
-      <SearchForm seedRecommendations={seedRecommendations} setSeedRecommendations={setSeedRecommendations} />
-      <TrackList isSeed tracks={seedRecommendations} setSeedRecommendations={setSeedRecommendations} />
+      <SearchForm
+        seedRecommendations={seedRecommendations}
+        setSeedRecommendations={setSeedRecommendations}
+      />
+      <TrackList
+        isSeed
+        tracks={seedRecommendations}
+        setSeedRecommendations={setSeedRecommendations}
+      />
       <TrackList isSeed={false} tracks={spotifyRecommendations} />
     </div>
   );
