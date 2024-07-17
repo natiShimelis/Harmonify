@@ -1,8 +1,10 @@
-import NextAuth, { DefaultSession, Session } from "next-auth";
-import Spotify from "next-auth/providers/spotify";
+import NextAuth, { DefaultSession, Session } from "next-auth"; // Import NextAuth and types
+import Spotify from "next-auth/providers/spotify"; // Import the Spotify provider
 
+// Function to refresh the access token using the refresh token
 async function refreshAccessToken(token: any) {
-  console.log("this is getting called---------------------------------------");
+  console.log("Refreshing access token...");
+
   try {
     const params = new URLSearchParams({
       grant_type: "refresh_token",
@@ -24,7 +26,7 @@ async function refreshAccessToken(token: any) {
     if (!response.ok) {
       throw refreshedTokens;
     }
-    console.log("THESSE ARE THE REFRESH TOKEN RESPONSE", refreshedTokens);
+    console.log("Refreshed token response:", refreshedTokens);
     return {
       ...token,
       accessToken: refreshedTokens.access_token,
@@ -40,6 +42,7 @@ async function refreshAccessToken(token: any) {
   }
 }
 
+// Export the handlers, signIn, signOut, and auth methods from NextAuth
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Spotify({
@@ -48,32 +51,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   pages: {
-    signIn: "/login",
+    signIn: "/login", // Custom sign-in page
   },
   callbacks: {
     async jwt({ token, account, user }) {
       if (account) {
-        // console.log("3333333333333333333333333333333", account);
-        console.log(token);
+        console.log("New account data:", account);
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
         token.accessTokenExpires =
           Date.now() + (account.expires_in as number) * 1000;
         token.user = user;
-        // token.access_token = account.access_token;
       }
       if (Date.now() < (token.accessTokenExpires as number)) {
         return token;
       }
 
       return refreshAccessToken(token);
-      //   return token;
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken;
       session.refreshToken = token.refreshToken;
       session.user = { ...token.user, ...session.user };
-      //   return session;
       return {
         ...session,
         token,
@@ -82,17 +81,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 });
 
+// Extending the next-auth module to add custom types
 declare module "next-auth" {
-  /**
-   * The shape of the user object returned in the OAuth providers' `profile` callback,
-   * or the second parameter of the `session` callback, when using a database.
-   */
   interface User {}
 
   interface Account {}
-  /**
-   * Returned by `useSession`, `auth`, contains information about the active session.
-   */
+
   interface Session extends DefaultSession {
     accessToken?: string;
     error?: string;
@@ -100,12 +94,11 @@ declare module "next-auth" {
   }
 }
 
-// The `JWT` interface can be found in the `next-auth/jwt` submodule
-
+// Importing the JWT interface from next-auth/jwt
 import { JWT as NextAuthJWT } from "next-auth/jwt";
 
+// Extending the next-auth/jwt module to add custom types
 declare module "next-auth/jwt" {
-  /** Returned by the `jwt` callback and `auth`, when using JWT sessions */
   interface JWT {
     accessToken?: string;
     refreshToken?: string;
@@ -114,4 +107,3 @@ declare module "next-auth/jwt" {
     user?: Session["user"];
   }
 }
-
